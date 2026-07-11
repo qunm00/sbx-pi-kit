@@ -5,7 +5,7 @@ displayName: Pi
 description: Pi coding agent with OpenRouter free-tier + GitHub Copilot support
 
 agent:
-  image: ghcr.io/nmiquan/sbx-pi-template:2026-07-11-node24
+  image: nmiquan/sbx-pi-template:2026-07-11-node24
   entrypoint:
     run: [pi]
 
