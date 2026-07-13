@@ -11,18 +11,24 @@ network:
   allowedDomains:
     - "registry.npmjs.org:443"
     - "openrouter.ai:443"
+    - "api.openrouter.ai:443"
     - "api.github.com:443"
     - "github.com:443"
+    - "github.com:80"
     - "copilot-proxy.githubusercontent.com:443"
+    - "pi.dev:443"
 
-credentials:
-  sources:
-    github:
-      env: [GITHUB_TOKEN]
-    openrouter:
-      env: [OPENROUTER_API_KEY]
-  environment:
-    proxyManaged: [GITHUB_TOKEN, OPENROUTER_API_KEY]
+commands:
+  initFiles:
+    - path: /home/agent/.pi/agent/auth.json
+      content: |
+        {
+          "openrouter": {
+            "type": "api-key",
+            "key": "sbx-cs-2hMFoJCMsTbmJ1sr"
+          }
+        }
+      onlyIfMissing: true
 
 memory: |
   ## Sandbox environment

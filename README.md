@@ -14,6 +14,16 @@ sbx secret set OPENROUTER_API_KEY sk-or-...
 
 ## Usage
 
+### Login OpenRouter
+
+```bash
+sbx secret set-custom -g \
+  --host api.openrouter.ai \
+  --env OPENROUTER_API_KEY
+```
+
+Retrieve the placeholder secret key from the command then place it in `spec.yaml`
+
 ### Launcher script (recommended)
 
 ```bash
@@ -36,7 +46,7 @@ same directory reconnects to the same sandbox. Use `--new` to start fresh.
 ### Manual sbx commands
 
 ```bash
-# First run (creates sandbox)
+# First run (creates sandbox and set custom secret)
 sbx create --kit "git+https://github.com/qunm00/sbx-pi-kit.git" --name my-project-pi pi ~/my-project
 sbx create --kit . --name my-project-pi pi ~/my-project
 
