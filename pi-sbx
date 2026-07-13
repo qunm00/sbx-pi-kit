@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+KIT_DIR="git+https://github.com/qunm00/sbx-pi-kit.git"
+C_DIM=$'\033[2m'; C_CYAN=$'\033[36m'; C_GREEN=$'\033[32m'
+C_YELLOW=$'\033[33m'; C_RED=$'\033[31m'; C_BOLD=$'\033[1m'; C_RST=$'\033[0m'
+log() { printf '%s\n' "$*" >&2; }
+
+FORCE_NEW=false
+HELP=false
+VERSION=false
+PI_ARGS=()
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --new)      FORCE_NEW=true; shift;;
+    --version|-v) VERSION=true; shift;;
+    -h|--help)  HELP=true; shift;;
+    --kit)      KIT_DIR="$2"; shift 2;;
+    --)         shift; break;;
+    *)          PI_ARGS+=("$1"); shift;;
+  esac
+done
+# Remaining args: directory path(s)
+set -- "${PI_ARGS[@]}"
+
+if $HELP; then
+  echo "Usage: pi-sbx [--new] [--kit <path|url>] [dir]"
+  echo "  --new       Destroy and re-create the sandbox"
+  echo "  --kit       Kit path or git URL (default: $KIT_DIR)"
+  echo "  dir         Workspace directory (default: current dir)"
+  echo ""
+  echo "Examples:"
+  echo "  pi-sbx                              Interactive pi session in current dir"
+  echo "  pi-sbx ~/my-project                 Interactive pi session in ~/my-project"
+  echo "  pi-sbx --new                        Force fresh sandbox"
+  echo "  pi-sbx --kit ../sbx-pi-kit ~/my-project  Use local kit checkout"
+  exit 0
+fi
+
+if ! command -v sbx >/dev/null 2>&1; then
+  log "${C_RED}pi-sbx: sbx CLI not found. Install: brew install docker/tap/sbx${C_RST}"
+  exit 1
+fi
+
+WORKDIR="$(cd "${1:-.}" && pwd)"
+SANDBOX_NAME="pi-$(basename "$WORKDIR" | tr -cd '[:alnum:]_-')"
+
+if $VERSION; then
+  if sbx ls 2>/dev/null | awk -v name="$SANDBOX_NAME" 'NR>1 && $1 == name {found=1} END {exit !found}'; then
+    exec sbx exec "$SANDBOX_NAME" pi --version
+  fi
+  echo "pi-sbx: no sandbox for $(basename "$WORKDIR")"
+  exit 0
+fi
+
+log "${C_BOLD}${C_CYAN}╭─ pi-sbx ───────────────────────────────────────╮${C_RST}"
+log "${C_CYAN}│${C_RST} workspace : ${WORKDIR}"
+log "${C_CYAN}│${C_RST} sandbox   : ${SANDBOX_NAME}"
+log "${C_BOLD}${C_CYAN}╰────────────────────────────────────────────────╯${C_RST}"
+
+if $FORCE_NEW; then
+  log "${C_DIM}Removing existing sandbox '${SANDBOX_NAME}' (--new)${C_RST}"
+  sbx rm -f "$SANDBOX_NAME" >/dev/null 2>&1 || true
+fi
+
+EXISTS=false
+if sbx ls 2>/dev/null | awk -v name="$SANDBOX_NAME" 'NR>1 && $1 == name {found=1} END {exit !found}'; then
+  EXISTS=true
+fi
+
+log "${C_DIM}Sandbox exists: $EXISTS${C_RST}"
+if ! $EXISTS; then
+  if ! sbx create --kit "$KIT_DIR" --name "$SANDBOX_NAME" pi "$WORKDIR" 2>&1; then
+    log "${C_RED}pi-sbx: failed to create sandbox${C_RST}"
+    exit 1
+  fi
+fi
+
+sleep 2
+exec sbx exec -it "$SANDBOX_NAME" pi
+# Can also be run with sbx run, 
+# exec sbx run --kit $KIT_DIR --name $SANDBOX_NAME pi "$WORKDIR"
