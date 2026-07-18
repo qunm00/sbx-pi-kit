@@ -10,6 +10,7 @@ sandbox:
 network:
   allowedDomains:
     - "registry.npmjs.org:443"
+    - "opencode.ai:443"
     - "openrouter.ai:443"
     - "api.openrouter.ai:443"
     - "api.github.com:443"
@@ -26,6 +27,10 @@ commands:
           "openrouter": {
             "type": "api-key",
             "key": "sbx-cs-2hMFoJCMsTbmJ1sr"
+          },
+          "opencode": {
+            "type": "api-key",
+            "key": "sbx-cs-3a1bx2bdT0zJCENc"
           }
         }
       onlyIfMissing: true
