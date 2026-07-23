@@ -18,6 +18,23 @@ network:
     - "github.com:80"
     - "copilot-proxy.githubusercontent.com:443"
     - "pi.dev:443"
+    - "context7.com:443"
+  serviceDomains:
+    context7.com: context7
+  serviceAuth:
+    context7:
+      headerName: Authorization
+      valueFormat: "Bearer %s"
+
+credentials:
+  sources:
+    context7:
+      env:
+        - CONTEXT7_API_KEY
+
+environment:
+  proxyManaged:
+    - CONTEXT7_API_KEY
 
 commands:
   initFiles:
