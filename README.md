@@ -2,7 +2,7 @@
 
 Docker Sandbox kit for running the `pi` coding agent with:
 - OpenRouter free-tier models
-- GitHub Copilot (existing subscription)
+- OpenCode
 
 ## Prerequisites
 
@@ -10,6 +10,7 @@ Docker Sandbox kit for running the `pi` coding agent with:
 brew install docker/tap/sbx
 sbx login
 sbx secret set OPENROUTER_API_KEY sk-or-...
+sbx secret set OPENCODE_API_KEY sk-or-...
 ```
 
 ## Usage
@@ -20,6 +21,10 @@ sbx secret set OPENROUTER_API_KEY sk-or-...
 sbx secret set-custom -g \
   --host api.openrouter.ai \
   --env OPENROUTER_API_KEY
+
+sbx secret set-custom -g \
+  --host api.opencode.ai \
+  --env OPENCODE_API_KEY
 ```
 
 Retrieve the placeholder secret key from the command then place it in `spec.yaml`
