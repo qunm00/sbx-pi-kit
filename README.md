@@ -9,8 +9,6 @@ Docker Sandbox kit for running the `pi` coding agent with:
 ```bash
 brew install docker/tap/sbx
 sbx login
-sbx secret set OPENROUTER_API_KEY sk-or-...
-sbx secret set OPENCODE_API_KEY sk-or-...
 ```
 
 ## Usage
