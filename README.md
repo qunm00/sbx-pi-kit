@@ -10,9 +10,6 @@ Docker Sandbox kit for running the `pi` coding agent with:
 brew install docker/tap/sbx
 sbx login
 ```
-
-## Usage
-
 ### Set secrets on host
 
 ```bash
@@ -30,6 +27,8 @@ sbx secret set-custom -g \
 ```
 
 Retrieve the placeholder secret key from the command then place it in `spec.yaml`
+
+## Usage
 
 ### Launcher script (recommended)
 
