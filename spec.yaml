@@ -43,11 +43,11 @@ commands:
         {
           "openrouter": {
             "type": "api-key",
-            "key": "sbx-cs-2hMFoJCMsTbmJ1sr"
+            "key": "$OPENROUTER_API_KEY"
           },
           "opencode": {
             "type": "api-key",
-            "key": "sbx-cs-3a1bx2bdT0zJCENc"
+            "key": "$OPENCODE_API_KEY"
           }
         }
       onlyIfMissing: true
