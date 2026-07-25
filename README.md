@@ -9,13 +9,8 @@ Docker Sandbox kit for running the `pi` coding agent with:
 ```bash
 brew install docker/tap/sbx
 sbx login
-sbx secret set OPENROUTER_API_KEY sk-or-...
-sbx secret set OPENCODE_API_KEY sk-or-...
 ```
-
-## Usage
-
-### Login OpenRouter
+### Set secrets on host
 
 ```bash
 sbx secret set-custom -g \
@@ -25,9 +20,15 @@ sbx secret set-custom -g \
 sbx secret set-custom -g \
   --host api.opencode.ai \
   --env OPENCODE_API_KEY
+
+sbx secret set-custom -g \
+    --host context7.com \
+    --env CONTEXT7_API_KEY
 ```
 
 Retrieve the placeholder secret key from the command then place it in `spec.yaml`
+
+## Usage
 
 ### Launcher script (recommended)
 
