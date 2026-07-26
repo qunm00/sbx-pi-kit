@@ -36,22 +36,6 @@ environment:
   proxyManaged:
     - CONTEXT7_API_KEY
 
-commands:
-  initFiles:
-    - path: /home/agent/.pi/agent/auth.json
-      content: |
-        {
-          "openrouter": {
-            "type": "api-key",
-            "key": "$OPENROUTER_API_KEY"
-          },
-          "opencode": {
-            "type": "api-key",
-            "key": "$OPENCODE_API_KEY"
-          }
-        }
-      onlyIfMissing: true
-
 memory: |
   ## Sandbox environment
   You are running inside a Docker sandbox (microVM).
