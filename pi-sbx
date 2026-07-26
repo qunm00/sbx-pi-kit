@@ -77,6 +77,11 @@ if ! $EXISTS; then
 fi
 
 sleep 2
-exec sbx exec -it "$SANDBOX_NAME" pi
-# Can also be run with sbx run, 
+# Redirect session storage to the persistent workspace mount so sessions
+# survive sandbox recreation (--new). User namespace (~/.pi/agent/) stays
+# ephemeral in the sandbox; only sessions land in the project.
+exec sbx exec -it "$SANDBOX_NAME" \
+  env PI_CODING_AGENT_SESSION_DIR="$WORKDIR/.pi/sessions" \
+  pi
+# Can also be run with sbx run,
 # exec sbx run --kit $KIT_DIR --name $SANDBOX_NAME pi "$WORKDIR"
