@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Changed
+- **Deprecated**: `--kit` is no longer passed to `sbx`; the kit ref is now the first
+  positional argument of `sbx create` / `sbx run`
+- `pi-sbx` now accepts the kit as its first positional argument (`pi-sbx <kit> [dir]`)
+- **Removed**: the `--kit` flag (it now errors, telling you to use the positional form)
+
 ## [1.0.1] - 2026-07-13
 
 ### Changed

@@ -44,7 +44,13 @@ pi-sbx ~/my-project
 
 # Force a fresh sandbox
 pi-sbx --new ~/my-project
+
+# Use a local kit checkout (kit is the first positional argument)
+pi-sbx ../sbx-pi-kit ~/my-project
 ```
+
+> The kit is the first positional argument (`pi-sbx <kit> [dir]`). The old
+> `--kit` flag was removed.
 
 The launcher creates a per-directory sandbox (`pi-<dirname>`). Running from the
 same directory reconnects to the same sandbox. Use `--new` to start fresh.
@@ -53,12 +59,13 @@ same directory reconnects to the same sandbox. Use `--new` to start fresh.
 
 ```bash
 # First run (creates sandbox and set custom secret)
-sbx create --kit "git+https://github.com/qunm00/sbx-pi-kit.git" --name my-project-pi pi ~/my-project
-sbx create --kit . --name my-project-pi pi ~/my-project
+# The kit is the first positional argument; --kit is deprecated
+sbx create "git+https://github.com/qunm00/sbx-pi-kit.git" --name my-project-pi pi ~/my-project
+sbx create . --name my-project-pi pi ~/my-project
 
 # Re-attach later
-sbx run --kit "git+https://github.com/qunm00/sbx-pi-kit.git" --name my-project-pi
-sbx run --kit . --name my-project-pi
+sbx run "git+https://github.com/qunm00/sbx-pi-kit.git" --name my-project-pi
+sbx run . --name my-project-pi
 
 # One-shot prompt
 sbx exec my-project-pi pi -p "list all .ts files"

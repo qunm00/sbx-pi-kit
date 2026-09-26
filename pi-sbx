@@ -3,7 +3,7 @@ set -euo pipefail
 
 KIT_DIR="git+https://github.com/qunm00/sbx-pi-kit.git"
 C_DIM=$'\033[2m'; C_CYAN=$'\033[36m'; C_GREEN=$'\033[32m'
-C_YELLOW=$'\033[33m'; C_RED=$'\033[31m'; C_BOLD=$'\033[1m'; C_RST=$'\033[0m'
+C_RED=$'\033[31m'; C_BOLD=$'\033[1m'; C_RST=$'\033[0m'
 log() { printf '%s\n' "$*" >&2; }
 
 FORCE_NEW=false
@@ -15,7 +15,7 @@ while [ $# -gt 0 ]; do
     --new)      FORCE_NEW=true; shift;;
     --version|-v) VERSION=true; shift;;
     -h|--help)  HELP=true; shift;;
-    --kit)      KIT_DIR="$2"; shift 2;;
+    --kit)      log "${C_RED}error:${C_RST} --kit was removed; pass the kit as the first positional argument (pi-sbx <kit> [dir])"; exit 2;;
     --)         shift; break;;
     *)          PI_ARGS+=("$1"); shift;;
   esac
@@ -23,17 +23,34 @@ done
 # Remaining args: directory path(s)
 set -- "${PI_ARGS[@]}"
 
+# First positional argument may be a sandbox kit ref (git URL, OCI ref, path).
+# Everything after it is the workspace directory.
+is_kit_ref() {
+  case "$1" in
+    *://*|*+*|*.git|*.zip|*.yaml|*.yml) return 0;;
+  esac
+  # A local kit directory, when a workspace dir was also given
+  if [ $# -gt 1 ] && [ -f "$1/spec.yaml" -o -f "$1/spec.yml" ]; then
+    return 0
+  fi
+  return 1
+}
+if [ $# -gt 0 ] && is_kit_ref "$@"; then
+  KIT_DIR="$1"
+  shift
+fi
+
 if $HELP; then
-  echo "Usage: pi-sbx [--new] [--kit <path|url>] [dir]"
+  echo "Usage: pi-sbx [--new] [kit] [dir]"
   echo "  --new       Destroy and re-create the sandbox"
-  echo "  --kit       Kit path or git URL (default: $KIT_DIR)"
+  echo "  kit         Kit path, git URL, or OCI ref (default: $KIT_DIR)"
   echo "  dir         Workspace directory (default: current dir)"
   echo ""
   echo "Examples:"
   echo "  pi-sbx                              Interactive pi session in current dir"
   echo "  pi-sbx ~/my-project                 Interactive pi session in ~/my-project"
   echo "  pi-sbx --new                        Force fresh sandbox"
-  echo "  pi-sbx --kit ../sbx-pi-kit ~/my-project  Use local kit checkout"
+  echo "  pi-sbx ../sbx-pi-kit ~/my-project  Use local kit checkout"
   exit 0
 fi
 
@@ -70,7 +87,7 @@ fi
 
 log "${C_DIM}Sandbox exists: $EXISTS${C_RST}"
 if ! $EXISTS; then
-  if ! sbx create --kit "$KIT_DIR" --name "$SANDBOX_NAME" pi "$WORKDIR" 2>&1; then
+  if ! sbx create "$KIT_DIR" --name "$SANDBOX_NAME" pi "$WORKDIR" 2>&1; then
     log "${C_RED}pi-sbx: failed to create sandbox${C_RST}"
     exit 1
   fi
@@ -84,4 +101,4 @@ exec sbx exec -it "$SANDBOX_NAME" \
   env PI_CODING_AGENT_SESSION_DIR="$WORKDIR/.pi/sessions" \
   pi --model opencode/deepseek-v4-flash-free
 # Can also be run with sbx run,
-# exec sbx run --kit $KIT_DIR --name $SANDBOX_NAME pi "$WORKDIR"
+# exec sbx run "$KIT_DIR" --name "$SANDBOX_NAME" pi "$WORKDIR"
