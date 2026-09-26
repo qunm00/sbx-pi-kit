@@ -1,0 +1,13 @@
+# OS / editor cruft
+.DS_Store
+*.swp
+*~
+.idea/
+.vscode/
+
+# Local pi state — regenerated per machine.
+# Only sessions and project settings are synced; the user namespace
+# (~/.pi/agent/) and anything with auth tokens stays out of the repo.
+.pi/*
+!.pi/sessions/
+!.pi/settings.json
