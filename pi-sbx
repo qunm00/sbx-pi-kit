@@ -99,6 +99,6 @@ sleep 2
 # ephemeral in the sandbox; only sessions land in the project.
 exec sbx exec -it "$SANDBOX_NAME" \
   env PI_CODING_AGENT_SESSION_DIR="$WORKDIR/.pi/sessions" \
-  pi --model opencode/deepseek-v4-flash-free
+  pi --model opencode/space-bunny-free
 # Can also be run with sbx run,
 # exec sbx run "$KIT_DIR" --name "$SANDBOX_NAME" pi "$WORKDIR"
