@@ -87,7 +87,7 @@ fi
 
 log "${C_DIM}Sandbox exists: $EXISTS${C_RST}"
 if ! $EXISTS; then
-  if ! sbx create "$KIT_DIR" --name "$SANDBOX_NAME" pi "$WORKDIR" 2>&1; then
+  if ! sbx create "$KIT_DIR" --name "$SANDBOX_NAME" "$WORKDIR" 2>&1; then
     log "${C_RED}pi-sbx: failed to create sandbox${C_RST}"
     exit 1
   fi
