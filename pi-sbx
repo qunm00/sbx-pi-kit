@@ -239,12 +239,22 @@ sleep 2
 # Redirect session storage to the persistent mount so sessions survive sandbox
 # recreation (--new) and are shared by every project. The user namespace
 # (~/.pi/agent/) stays ephemeral in the sandbox; only sessions land on the host.
+#
+# pi must start in the directory pi-sbx was launched from, not the workdir the
+# sandbox was created with, because the shared sandbox is reused across
+# projects. sbx exec has no workdir flag, so cd inside the sandbox. When the
+# workspace is not mounted (PI_SBX_MOUNTS set) the directory does not exist
+# there, so fall back to the home directory.
+exec_pi() {
+  sbx exec -it "$SANDBOX_NAME" \
+    env PI_CODING_AGENT_SESSION_DIR="$SESSION_DIR" \
+    sh -c 'cd "$1" 2>/dev/null || cd "$HOME" || cd /; shift; exec "$@"' \
+    sh "$WORKDIR" pi --model opencode/space-bunny-free
+}
 if [ "$DRY_RUN" = "1" ]; then
-  log "${C_DIM}[dry-run]${C_RST} sbx exec -it $(printf '%q ' "$SANDBOX_NAME") env PI_CODING_AGENT_SESSION_DIR=$SESSION_DIR pi --model opencode/space-bunny-free"
+  log "${C_DIM}[dry-run]${C_RST} sbx exec -it $(printf '%q ' "$SANDBOX_NAME") env PI_CODING_AGENT_SESSION_DIR=$SESSION_DIR sh -c $(printf '%q ' 'cd "$1" 2>/dev/null || cd "$HOME" || cd /; shift; exec "$@"') sh $WORKDIR pi --model opencode/space-bunny-free"
   exit 0
 fi
-exec sbx exec -it "$SANDBOX_NAME" \
-  env PI_CODING_AGENT_SESSION_DIR="$SESSION_DIR" \
-  pi --model opencode/space-bunny-free
+exec_pi
 # Can also be run with sbx run,
 # exec sbx run "$KIT_DIR" --name "$SANDBOX_NAME" pi "$WORKDIR"

@@ -20,6 +20,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - `PI_SBX_DRY_RUN=1` to print the resolved `sbx` commands instead of running them
 
 ### Changed
+- pi now starts in the directory `pi-sbx` was launched from instead of the
+  workdir the sandbox was created with, so the shared `pi-sbx` sandbox follows
+  the project you are in. When that directory is not mounted (`PI_SBX_MOUNTS`
+  is set), pi starts in the home directory
 - `PI_SBX_MOUNTS` now replaces the workspace mount instead of adding to it: when
   it is set, the current directory (and the `dir` positional) is not mounted. When
   it is unset, the workspace directory is mounted as before
