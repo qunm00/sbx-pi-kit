@@ -52,35 +52,63 @@ pi-sbx ../sbx-pi-kit ~/my-project
 > The kit is the first positional argument (`pi-sbx <kit> [dir]`). The old
 > `--kit` flag was removed.
 
-The launcher creates a per-directory sandbox (`pi-<dirname>`). Running from the
-same directory reconnects to the same sandbox. Use `--new` to start fresh.
+The launcher uses one shared sandbox named `pi-sbx` for every project. Running
+`pi-sbx` again from anywhere re-uses it. Use `--new` to start fresh.
+
+### One sandbox for many projects
+
+`PI_SBX_MOUNTS` lists the directories to mount. When it is set, those
+directories are the only mounts and the current directory is ignored. When it
+is unset, the launcher mounts the workspace directory instead.
+
+```bash
+# Mount ~/work and ~/shared-libs (read-only) and nothing else
+PI_SBX_MOUNTS="~/work,~/shared-libs:ro" pi-sbx
+
+# Same, for every shell: put it in ~/.zshrc
+export PI_SBX_MOUNTS="~/work,~/shared-libs:ro"
+```
+
+Sessions are stored outside any project so all projects share them:
+
+```bash
+export PI_SBX_SESSIONS=~/.pi-sbx   # default
+```
+
+The launcher mounts this directory read-write and points pi at
+`<dir>/sessions`. It also records the mount list at `<dir>/sbx-mounts`, so a
+changed mount list warns and suggests `--new` (sbx fixes mounts at create
+time).
+
+> `--new` destroys the shared sandbox for every project. Re-run it from the
+> directory whose mount list you want.
 
 ### Manual sbx commands
 
 ```bash
 # First run (creates sandbox and set custom secret)
 # The kit is the first positional argument; --kit is deprecated
-sbx create "git+https://github.com/qunm00/sbx-pi-kit.git" --name my-project-pi pi ~/my-project
-sbx create . --name my-project-pi pi ~/my-project
+sbx create "git+https://github.com/qunm00/sbx-pi-kit.git" --name pi-sbx pi ~/my-project ~/.pi-sbx
+sbx create . --name pi-sbx pi ~/my-project ~/.pi-sbx
 
 # Extra mounts: paths after the workspace, mounted at the same path (:ro = read-only)
-sbx create . --name my-project-pi pi ~/my-project ~/shared-libs:ro
+sbx create . --name pi-sbx pi ~/my-project ~/.pi-sbx ~/shared-libs:ro
 
 # Re-attach later
-sbx run "git+https://github.com/qunm00/sbx-pi-kit.git" --name my-project-pi
-sbx run . --name my-project-pi
+sbx run "git+https://github.com/qunm00/sbx-pi-kit.git" --name pi-sbx
+sbx run . --name pi-sbx
 
 # One-shot prompt
-sbx exec my-project-pi pi -p "list all .ts files"
+sbx exec pi-sbx pi -p "list all .ts files"
 
 # Destroy
-sbx rm -f my-project-pi
+sbx rm -f pi-sbx
 ```
 
 ### One-shot prompts via alias
 
 ```bash
-alias sbx-pi='sbx exec $(sbx ls 2>/dev/null | awk "NR>1 && /^pi-/ {print \$1; exit}") pi'
+alias sbx-pi='sbx exec pi-sbx pi'
 sbx-pi -p "fix the bug in src/main.ts"
 ```
 
@@ -88,8 +116,9 @@ sbx-pi -p "fix the bug in src/main.ts"
 
 The [pi-sbx](pi-sbx) launcher handles a two-phase lifecycle:
 
-1. `sbx create` — starts the sandbox microVM with your workspace mounted
-2. `sbx run` — attaches your terminal (provides TTY for pi's interactive TUI)
+1. `sbx create` — starts the sandbox microVM with the workspace, the sessions
+   directory, and any `PI_SBX_MOUNTS` directories
+2. `sbx exec` — attaches your terminal (provides TTY for pi's interactive TUI)
 
 ## Template
 
