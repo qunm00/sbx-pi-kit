@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Added
+- `PI_SBX_MOUNTS` env var: comma-separated absolute host paths mounted into the
+  sandbox at the same path, `:ro` for read-only. The resolved list is recorded in
+  `<workspace>/.pi/sbx-mounts`; a changed list warns and suggests `--new`
+  (sbx fixes mounts at create time)
+- `--name <name>` flag to override the default `pi-<dirname>` sandbox name
+- `PI_SBX_DRY_RUN=1` to print the resolved `sbx` commands instead of running them
+
 ### Changed
 - **Deprecated**: `--kit` is no longer passed to `sbx`; the kit ref is now the first
   positional argument of `sbx create` / `sbx run`

@@ -63,6 +63,9 @@ same directory reconnects to the same sandbox. Use `--new` to start fresh.
 sbx create "git+https://github.com/qunm00/sbx-pi-kit.git" --name my-project-pi pi ~/my-project
 sbx create . --name my-project-pi pi ~/my-project
 
+# Extra mounts: paths after the workspace, mounted at the same path (:ro = read-only)
+sbx create . --name my-project-pi pi ~/my-project ~/shared-libs:ro
+
 # Re-attach later
 sbx run "git+https://github.com/qunm00/sbx-pi-kit.git" --name my-project-pi
 sbx run . --name my-project-pi

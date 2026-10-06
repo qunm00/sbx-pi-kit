@@ -4,16 +4,20 @@ set -euo pipefail
 KIT_DIR="git+https://github.com/qunm00/sbx-pi-kit.git"
 C_DIM=$'\033[2m'; C_CYAN=$'\033[36m'; C_GREEN=$'\033[32m'
 C_RED=$'\033[31m'; C_BOLD=$'\033[1m'; C_RST=$'\033[0m'
+C_YELLOW=$'\033[33m'
 log() { printf '%s\n' "$*" >&2; }
 
 FORCE_NEW=false
 HELP=false
 VERSION=false
+CUSTOM_NAME=""
 PI_ARGS=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --new)      FORCE_NEW=true; shift;;
     --version|-v) VERSION=true; shift;;
+    --name)     if [ $# -lt 2 ]; then log "${C_RED}error:${C_RST} --name requires a value"; exit 2; fi; CUSTOM_NAME="$2"; shift 2;;
+    --name=*)   CUSTOM_NAME="${1#--name=}"; shift;;
     -h|--help)  HELP=true; shift;;
     --kit)      log "${C_RED}error:${C_RST} --kit was removed; pass the kit as the first positional argument (pi-sbx <kit> [dir])"; exit 2;;
     --)         shift; break;;
@@ -41,18 +45,71 @@ if [ $# -gt 0 ] && is_kit_ref "$@"; then
 fi
 
 if $HELP; then
-  echo "Usage: pi-sbx [--new] [kit] [dir]"
-  echo "  --new       Destroy and re-create the sandbox"
-  echo "  kit         Kit path, git URL, or OCI ref (default: $KIT_DIR)"
-  echo "  dir         Workspace directory (default: current dir)"
+  echo "Usage: pi-sbx [--new] [--name <name>] [kit] [dir]"
+  echo "  --new        Destroy and re-create the sandbox"
+  echo "  --name NAME  Sandbox name (default: pi-<workspace dirname>)"
+  echo "  kit          Kit path, git URL, or OCI ref (default: $KIT_DIR)"
+  echo "  dir          Workspace directory (default: current dir)"
+  echo ""
+  echo "Environment:"
+  echo "  PI_SBX_MOUNTS  Extra directories to mount, comma separated."
+  echo "                 Each entry is an absolute host path, mounted at the same"
+  echo "                 path inside the sandbox. Append :ro for read-only."
+  echo "                 Example: PI_SBX_MOUNTS=\"\$HOME/libs:ro,/Users/me/docs\""
   echo ""
   echo "Examples:"
   echo "  pi-sbx                              Interactive pi session in current dir"
   echo "  pi-sbx ~/my-project                 Interactive pi session in ~/my-project"
+  echo "  pi-sbx --name spike                 Sandbox named 'spike' instead of pi-<dirname>"
   echo "  pi-sbx --new                        Force fresh sandbox"
   echo "  pi-sbx ../sbx-pi-kit ~/my-project  Use local kit checkout"
   exit 0
 fi
+
+# Extra mounts come from PI_SBX_MOUNTS: comma-separated absolute paths,
+# optional :ro suffix. sbx mounts each at the same absolute path in the sandbox.
+MOUNTS=()
+parse_mounts() {
+  local raw="$1" entry path mode
+  local -a entries
+  IFS=',' read -r -a entries <<< "$raw"
+  for entry in "${entries[@]}"; do
+    entry="$(printf '%s' "$entry" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+    [ -z "$entry" ] && continue
+    mode="rw"
+    case "$entry" in
+      *:ro) path="${entry%:ro}"; mode="ro";;
+      *:rw) path="${entry%:rw}"; mode="rw";;
+      *)    path="$entry";;
+    esac
+    case "$path" in
+      /*) ;;
+      *) log "${C_RED}error:${C_RST} PI_SBX_MOUNTS entry must be an absolute path: $path"; exit 2;;
+    esac
+    case "$mode" in
+      ro) MOUNTS+=("${path}:ro");;
+      *)  MOUNTS+=("${path}");;
+    esac
+  done
+}
+parse_mounts "${PI_SBX_MOUNTS:-}"
+
+mounts_str() {
+  if [ ${#MOUNTS[@]} -eq 0 ]; then
+    printf ''
+  else
+    printf '%s\n' "${MOUNTS[@]}" | sort | tr '\n' ' ' | sed 's/ $//'
+  fi
+}
+
+DRY_RUN="${PI_SBX_DRY_RUN:-0}"
+run() {
+  if [ "$DRY_RUN" = "1" ]; then
+    log "${C_DIM}[dry-run]${C_RST} $(printf '%q ' "$@")"
+    return 0
+  fi
+  "$@"
+}
 
 if ! command -v sbx >/dev/null 2>&1; then
   log "${C_RED}pi-sbx: sbx CLI not found. Install: brew install docker/tap/sbx${C_RST}"
@@ -60,10 +117,23 @@ if ! command -v sbx >/dev/null 2>&1; then
 fi
 
 WORKDIR="$(cd "${1:-.}" && pwd)"
-SANDBOX_NAME="pi-$(basename "$WORKDIR" | tr -cd '[:alnum:]_-')"
+if [ -n "$CUSTOM_NAME" ]; then
+  SANDBOX_NAME="$(printf '%s' "$CUSTOM_NAME" | tr -cd '[:alnum:]_-')"
+  if [ -z "$SANDBOX_NAME" ]; then
+    log "${C_RED}error:${C_RST} --name has no usable characters: $CUSTOM_NAME"
+    exit 2
+  fi
+else
+  SANDBOX_NAME="pi-$(basename "$WORKDIR" | tr -cd '[:alnum:]_-')"
+fi
+MOUNTS_FILE="$WORKDIR/.pi/sbx-mounts"
 
 if $VERSION; then
   if sbx ls 2>/dev/null | awk -v name="$SANDBOX_NAME" 'NR>1 && $1 == name {found=1} END {exit !found}'; then
+    if [ "$DRY_RUN" = "1" ]; then
+      log "${C_DIM}[dry-run]${C_RST} sbx exec $(printf '%q ' "$SANDBOX_NAME") pi --version"
+      exit 0
+    fi
     exec sbx exec "$SANDBOX_NAME" pi --version
   fi
   echo "pi-sbx: no sandbox for $(basename "$WORKDIR")"
@@ -77,7 +147,7 @@ log "${C_BOLD}${C_CYAN}╰──────────────────
 
 if $FORCE_NEW; then
   log "${C_DIM}Removing existing sandbox '${SANDBOX_NAME}' (--new)${C_RST}"
-  sbx rm -f "$SANDBOX_NAME" >/dev/null 2>&1 || true
+  run sbx rm -f "$SANDBOX_NAME" >/dev/null 2>&1 || true
 fi
 
 EXISTS=false
@@ -86,17 +156,43 @@ if sbx ls 2>/dev/null | awk -v name="$SANDBOX_NAME" 'NR>1 && $1 == name {found=1
 fi
 
 log "${C_DIM}Sandbox exists: $EXISTS${C_RST}"
+for m in ${MOUNTS[@]+"${MOUNTS[@]}"}; do
+  case "$m" in
+    *:ro) log "${C_DIM}  mount      : ${m%:ro} (ro)";;
+    *)    log "${C_DIM}  mount      : ${m} (rw)";;
+  esac
+done
+
+if $EXISTS; then
+  # Mounts are fixed at create time, so an existing sandbox cannot gain one.
+  # Warn when the requested list differs from the one recorded at create.
+  CURRENT_MOUNTS="$(mounts_str)"
+  RECORDED_MOUNTS=""
+  [ -f "$MOUNTS_FILE" ] && RECORDED_MOUNTS="$(tr '\n' ' ' < "$MOUNTS_FILE" | sed 's/ $//')"
+  if [ "$CURRENT_MOUNTS" != "$RECORDED_MOUNTS" ]; then
+    log "${C_YELLOW}warning:${C_RST} mounts changed; sbx sets mounts at create time only."
+    log "         re-run with --new to apply: ${C_BOLD}pi-sbx --new${C_RST}"
+  fi
+fi
+
 if ! $EXISTS; then
-  if ! sbx create "$KIT_DIR" --name "$SANDBOX_NAME" "$WORKDIR" 2>&1; then
+  if ! run sbx create "$KIT_DIR" --name "$SANDBOX_NAME" "$WORKDIR" \
+       ${MOUNTS[@]+"${MOUNTS[@]}"} 2>&1; then
     log "${C_RED}pi-sbx: failed to create sandbox${C_RST}"
     exit 1
   fi
+  mkdir -p "$WORKDIR/.pi"
+  mounts_str > "$MOUNTS_FILE"
 fi
 
 sleep 2
 # Redirect session storage to the persistent workspace mount so sessions
 # survive sandbox recreation (--new). User namespace (~/.pi/agent/) stays
 # ephemeral in the sandbox; only sessions land in the project.
+if [ "$DRY_RUN" = "1" ]; then
+  log "${C_DIM}[dry-run]${C_RST} sbx exec -it $(printf '%q ' "$SANDBOX_NAME") env PI_CODING_AGENT_SESSION_DIR=$WORKDIR/.pi/sessions pi --model opencode/space-bunny-free"
+  exit 0
+fi
 exec sbx exec -it "$SANDBOX_NAME" \
   env PI_CODING_AGENT_SESSION_DIR="$WORKDIR/.pi/sessions" \
   pi --model opencode/space-bunny-free
