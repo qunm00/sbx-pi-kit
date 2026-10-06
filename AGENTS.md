@@ -12,10 +12,10 @@
 
 ## Learned Workspace Facts
 
-- Project `sbx-pi-kit` is a Docker Sandbox kit for running the `pi` coding agent; image is `nmiquan/sbx-pi-template:latest` (base `docker/sandbox-templates:shell`, runs as non-root `agent`)
-- Workspace is bind-mounted at its absolute host path inside the sandbox
-- Launcher script `pi-sbx` creates per-directory sandboxes (`pi-<dirname>`); usage is `pi-sbx [kit] [dir]`, where the kit is the first positional argument (`sbx create <kit> --name foo pi <dir>`) and `--kit` is a hard error
-- Key sbx commands: `sbx ls`, `sbx create`, `sbx run`, `sbx exec`, `sbx rm`; kit args via `--kit-arg` / `--kit-args-file`
+- Project `sbx-pi-kit` is a Docker Sandbox kit for running the `pi` coding agent; image is `nmiquan/sbx-pi-template:latest` (base `docker/sandbox-templates:shell`, runs as non-root `agent`). Sources: kit `git+https://github.com/qunm00/sbx-pi-kit.git`, template `https://github.com/qunm00/sbx-pi-template`
+- Workspace is bind-mounted at its absolute host path inside the sandbox, and the sandbox runs as uid 1000 `agent`; a host root-owned `.pi/` makes pi fail with `EACCES` on `.pi/sessions`, so take ownership back with `chown`
+- Launcher script `pi-sbx` creates per-directory sandboxes (`pi-<dirname>`, override with `--name <name>`); usage is `pi-sbx [--new] [--name <name>] [kit] [dir]`, where the kit is the first positional argument (`sbx create <kit> --name foo pi <dir>`) and `--kit` is a hard error. It reads `PI_SBX_MOUNTS` (extra mounts) and `PI_SBX_DRY_RUN=1` (print commands only), and must stay bash 3.2 compatible: expand arrays as `${arr[@]+"${arr[@]}"}` because empty arrays are unbound under `set -u`
+- Extra directories are plain positional paths after the workspace (`sbx run claude ~/project ~/shared-libs:ro`), mounted at the same absolute path and fixed at create time, so changing them needs `sbx rm` + recreate; key sbx commands: `sbx ls`, `sbx create`, `sbx run`, `sbx exec`, `sbx rm`; kit args via `--kit-arg` / `--kit-args-file`
 - Sandboxes are ephemeral per-directory: only the image and the bind-mounted workspace persist, and in-sandbox installs like `pi update --extensions` are lost on recreate
 - Durable toolchain belongs in the image; project-specific tools belong in a workspace-mounted bootstrap script
 - `https://github.com/qunm00/pi-skills` is a git package (entry `git:github.com/qunm00/pi-skills`) with skills under `skills/`, declared in `package.json` via `pi.skills`; it is cloned per sandbox to `~/.pi/agent/git/github.com/qunm00/pi-skills/`
@@ -24,4 +24,3 @@
 - Packages installed via `~/.pi/agent/settings.json`: `git:github.com/qunm00/pi-continual-learning`, `npm:@tintinweb/pi-subagents`, `npm:@upstash/context7-pi`, and `git:github.com/qunm00/pi-skills`
 - pi-subagents discovers agent types only from `.pi/agents/`, `.agents/agents/`, and `~/.pi/agent/agents/`
 - `.pi/` holds `state/`, `sessions/`, and `patches/`; `.pi/skills/` is currently empty of project skills
-- Sources: kit `git+https://github.com/qunm00/sbx-pi-kit.git`, template `https://github.com/qunm00/sbx-pi-template`
