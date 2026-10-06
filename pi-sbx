@@ -25,7 +25,9 @@ while [ $# -gt 0 ]; do
   esac
 done
 # Remaining args: directory path(s)
-set -- "${PI_ARGS[@]}"
+# Empty arrays under `set -u` are "unbound" in bash 3.2 (macOS default), so
+# always expand them with the ${arr[@]+"${arr[@]}"} form.
+set -- ${PI_ARGS[@]+"${PI_ARGS[@]}"}
 
 # First positional argument may be a sandbox kit ref (git URL, OCI ref, path).
 # Everything after it is the workspace directory.
@@ -73,7 +75,7 @@ parse_mounts() {
   local raw="$1" entry path mode
   local -a entries
   IFS=',' read -r -a entries <<< "$raw"
-  for entry in "${entries[@]}"; do
+  for entry in ${entries[@]+"${entries[@]}"}; do
     entry="$(printf '%s' "$entry" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
     [ -z "$entry" ] && continue
     mode="rw"
@@ -98,7 +100,7 @@ mounts_str() {
   if [ ${#MOUNTS[@]} -eq 0 ]; then
     printf ''
   else
-    printf '%s\n' "${MOUNTS[@]}" | sort | tr '\n' ' ' | sed 's/ $//'
+    printf '%s\n' ${MOUNTS[@]+"${MOUNTS[@]}"} | sort | tr '\n' ' ' | sed 's/ $//'
   fi
 }
 
