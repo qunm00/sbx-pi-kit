@@ -127,3 +127,31 @@ The [pi-sbx](pi-sbx) launcher handles a two-phase lifecycle:
 ## Template
 
 Built from [sbx-pi-template](https://github.com/qunm00/sbx-pi-template).
+
+## Plannotator
+
+[Plannotator](https://github.com/backnotprop/plannotator) reviews plans, files,
+and diffs in your browser. The extension is installed in the image, and the
+sandbox has no browser, so `pi-sbx` publishes the review port and starts pi in
+remote mode.
+
+- Plan review: `Ctrl+Alt+P` (or `/plannotator-plan-mode`), then open
+  <http://localhost:19432>
+- Annotate: `/plannotator-annotate README.md`, `/plannotator-last`
+- Code review: `/plannotator-review`
+
+Approvals, annotations, and feedback post back to the server in the sandbox and
+arrive as the agent's next message.
+
+If the URL does not open, check the mapping (use your `--name` if you set one):
+
+```bash
+sbx ports pi-sbx                                  # expect 127.0.0.1:19432->19432/tcp4
+sbx ports pi-sbx --publish 19432:19432
+```
+
+Only one sandbox can hold host port 19432 at a time; `pi-sbx` warns when
+publishing fails. Because the extension ships in the image, it survives
+`--new`. To rebuild the image, apply
+`docs/patches/sbx-pi-template-plannotator.diff` in a `sbx-pi-template`
+checkout and run `./rebuild.sh`.
