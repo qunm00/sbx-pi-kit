@@ -24,6 +24,10 @@ sbx secret set-custom -g \
 sbx secret set-custom -g \
     --host context7.com \
     --env CONTEXT7_API_KEY
+
+sbx secret set-custom -g \
+    --host api.deepseek.com \
+    --env DEEPSEEK_API_KEY 
 ```
 
 Retrieve the placeholder secret key from the command then place it in `spec.yaml`

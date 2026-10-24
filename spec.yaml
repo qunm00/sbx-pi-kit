@@ -19,6 +19,7 @@ network:
     - "copilot-proxy.githubusercontent.com:443"
     - "pi.dev:443"
     - "context7.com:443"
+    - "api.deepseek.com:443"
   serviceDomains:
     context7.com: context7
   serviceAuth:
