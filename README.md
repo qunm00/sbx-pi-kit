@@ -131,9 +131,12 @@ Built from [sbx-pi-template](https://github.com/qunm00/sbx-pi-template).
 ## Plannotator
 
 [Plannotator](https://github.com/backnotprop/plannotator) reviews plans, files,
-and diffs in your browser. The extension is installed in the image, and the
-sandbox has no browser, so `pi-sbx` publishes the review port and starts pi in
-remote mode.
+and diffs in your browser. The sandbox has no browser, so `pi-sbx` publishes the
+review port and starts pi in remote mode. The extension belongs in the image:
+apply `docs/patches/sbx-pi-template-plannotator.diff` in a `sbx-pi-template`
+checkout and run `./rebuild.sh` (see [Template](#template)). Until then,
+`pi install npm:@plannotator/pi-extension` inside the sandbox works for one
+sandbox and is lost on `--new`.
 
 - Plan review: `Ctrl+Alt+P` (or `/plannotator-plan-mode`), then open
   <http://localhost:19432>
@@ -141,7 +144,9 @@ remote mode.
 - Code review: `/plannotator-review`
 
 Approvals, annotations, and feedback post back to the server in the sandbox and
-arrive as the agent's next message.
+arrive as the agent's next message. Remote mode turns off host-only
+conveniences ("Ask this session", Open in, Update now); plan review, annotate,
+and code review keep working.
 
 If the URL does not open, check the mapping (use your `--name` if you set one):
 
@@ -151,7 +156,5 @@ sbx ports pi-sbx --publish 19432:19432
 ```
 
 Only one sandbox can hold host port 19432 at a time; `pi-sbx` warns when
-publishing fails. Because the extension ships in the image, it survives
-`--new`. To rebuild the image, apply
-`docs/patches/sbx-pi-template-plannotator.diff` in a `sbx-pi-template`
-checkout and run `./rebuild.sh`.
+publishing fails. Once the image patch is built in, the extension survives
+`--new`.
