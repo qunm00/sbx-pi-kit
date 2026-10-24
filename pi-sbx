@@ -126,6 +126,30 @@ run() {
   "$@"
 }
 
+# Plannotator's review UI is a local web server inside the sandbox, but the
+# browser lives on the host, so its fixed port must be published. Idempotent:
+# an existing mapping is left alone, and a failure only warns (another sandbox
+# may already hold the host port).
+PLANNOTATOR_PORT=19432
+publish_review_port() {
+  local name="$1" mapping
+  mapping="${PLANNOTATOR_PORT}:${PLANNOTATOR_PORT}"
+  if [ "$DRY_RUN" = "1" ]; then
+    log "${C_DIM}[dry-run]${C_RST} sbx ports $(printf '%q' "$name") --publish ${mapping}"
+    return 0
+  fi
+  # Capture first: `grep -q` exits early, and under `pipefail` that would fail
+  # the pipeline even on a match.
+  local existing="$(sbx ports "$name" 2>/dev/null || true)"
+  case "$existing" in
+    *"->${PLANNOTATOR_PORT}/"*) return 0;;
+  esac
+  if ! sbx ports "$name" --publish "$mapping" >/dev/null 2>&1; then
+    log "${C_YELLOW}warning:${C_RST} could not publish port ${PLANNOTATOR_PORT}; Plannotator reviews will not open in the host browser"
+    log "         check 'sbx ports ${name}' and any process already using ${PLANNOTATOR_PORT}"
+  fi
+}
+
 if ! command -v sbx >/dev/null 2>&1; then
   log "${C_RED}pi-sbx: sbx CLI not found. Install: brew install docker/tap/sbx${C_RST}"
   exit 1
@@ -190,6 +214,7 @@ else
   log "${C_CYAN}│${C_RST} workspace : (none, PI_SBX_MOUNTS is set)"
 fi
 log "${C_CYAN}│${C_RST} sandbox   : ${SANDBOX_NAME}"
+log "${C_CYAN}│${C_RST} review    : http://localhost:${PLANNOTATOR_PORT} (Plannotator)"
 log "${C_BOLD}${C_CYAN}╰────────────────────────────────────────────────╯${C_RST}"
 
 if $FORCE_NEW; then
@@ -235,6 +260,8 @@ if ! $EXISTS; then
   mounts_str > "$MOUNTS_FILE"
 fi
 
+publish_review_port "$SANDBOX_NAME"
+
 sleep 2
 # Redirect session storage to the persistent mount so sessions survive sandbox
 # recreation (--new) and are shared by every project. The user namespace
@@ -248,11 +275,14 @@ sleep 2
 exec_pi() {
   sbx exec -it "$SANDBOX_NAME" \
     env PI_CODING_AGENT_SESSION_DIR="$SESSION_DIR" \
+        PLANNOTATOR_REMOTE=1 \
+        PLANNOTATOR_PORT="$PLANNOTATOR_PORT" \
+        PLANNOTATOR_BROWSER=none \
     sh -c 'cd "$1" 2>/dev/null || cd "$HOME" || cd /; shift; exec "$@"' \
     sh "$WORKDIR" pi --model opencode/space-bunny-free
 }
 if [ "$DRY_RUN" = "1" ]; then
-  log "${C_DIM}[dry-run]${C_RST} sbx exec -it $(printf '%q ' "$SANDBOX_NAME") env PI_CODING_AGENT_SESSION_DIR=$SESSION_DIR sh -c $(printf '%q ' 'cd "$1" 2>/dev/null || cd "$HOME" || cd /; shift; exec "$@"') sh $WORKDIR pi --model opencode/space-bunny-free"
+  log "${C_DIM}[dry-run]${C_RST} sbx exec -it $(printf '%q ' "$SANDBOX_NAME") env PI_CODING_AGENT_SESSION_DIR=$SESSION_DIR PLANNOTATOR_REMOTE=1 PLANNOTATOR_PORT=$PLANNOTATOR_PORT PLANNOTATOR_BROWSER=none sh -c $(printf '%q ' 'cd "$1" 2>/dev/null || cd "$HOME" || cd /; shift; exec "$@"') sh $WORKDIR pi --model opencode/space-bunny-free"
   exit 0
 fi
 exec_pi
