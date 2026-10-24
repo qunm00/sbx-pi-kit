@@ -1,0 +1,26 @@
+diff --git a/Dockerfile b/Dockerfile
+index 721a113..b12282f 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -21,6 +21,13 @@ RUN mkdir -p "$HOME/.npm-global" \
+     && npm install -g --ignore-scripts @earendil-works/pi-coding-agent
+ ENV PATH="/home/agent/.npm-global/bin:${PATH}"
+ 
++# Plannotator's review UI is a web app inside the sandbox, opened from the
++# host browser through a published port. Bind all interfaces, never try to
++# launch a browser (there is none), and keep one fixed port to forward.
++ENV PLANNOTATOR_REMOTE=1 \
++    PLANNOTATOR_PORT=19432 \
++    PLANNOTATOR_BROWSER=none
++
+ # Install pi extensions and skills (git-based)
+ RUN mkdir -p "$HOME/.pi/agent" \
+     && pi install git:github.com/qunm00/pi-continual-learning \
+@@ -29,6 +36,7 @@ RUN mkdir -p "$HOME/.pi/agent" \
+     && pi install npm:pi-ask-user-questions \
+     && pi install git:github.com/obra/superpowers \
+     && pi install git:github.com/AminBlg/SimpleEnglish \
++    && pi install npm:@plannotator/pi-extension \
+     && pi install https://github.com/umputun/revdiff \
+     && pi update \
+     && pi update --extensions
