@@ -131,12 +131,17 @@ Built from [sbx-pi-template](https://github.com/qunm00/sbx-pi-template).
 ## Plannotator
 
 [Plannotator](https://github.com/backnotprop/plannotator) reviews plans, files,
-and diffs in your browser. The sandbox has no browser, so `pi-sbx` publishes the
-review port and starts pi in remote mode. The extension belongs in the image:
-apply `docs/patches/sbx-pi-template-plannotator.diff` in a `sbx-pi-template`
-checkout and run `./rebuild.sh` (see [Template](#template)). Until then,
-`pi install npm:@plannotator/pi-extension` inside the sandbox works for one
-sandbox and is lost on `--new`.
+and diffs in your browser. The sandbox has no browser, so the kit sets remote
+mode in `spec.yaml` (`PLANNOTATOR_REMOTE=1`, `PLANNOTATOR_PORT=19432`,
+`PLANNOTATOR_BROWSER=none`) and `pi-sbx` publishes that port on the host. The
+extension belongs in the image: apply `docs/patches/sbx-pi-template-plannotator.diff`
+in a `sbx-pi-template` checkout and run `./rebuild.sh` (see [Template](#template)).
+Until then, `pi install npm:@plannotator/pi-extension` inside the sandbox works
+for one sandbox and is lost on `--new`.
+
+> Kit environment is stored when the sandbox is created, so an existing sandbox
+> keeps its old values. Run `pi-sbx --new` after changing them, and check with
+> `sbx exec pi-sbx env | grep PLANNOTATOR`.
 
 - Plan review: `Ctrl+Alt+P` (or `/plannotator-plan-mode`), then open
   <http://localhost:19432>

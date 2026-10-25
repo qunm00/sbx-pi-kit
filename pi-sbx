@@ -130,6 +130,10 @@ run() {
 # browser lives on the host, so its fixed port must be published. Idempotent:
 # an existing mapping is left alone, and a failure only warns (another sandbox
 # may already hold the host port).
+#
+# The matching PLANNOTATOR_* env vars come from the kit (spec.yaml,
+# environment.variables), not from this script, so plain `sbx run` gets them
+# too. Keep this port in sync with PLANNOTATOR_PORT in spec.yaml.
 PLANNOTATOR_PORT=19432
 publish_review_port() {
   local name="$1" mapping
@@ -272,17 +276,20 @@ sleep 2
 # projects. sbx exec has no workdir flag, so cd inside the sandbox. When the
 # workspace is not mounted (PI_SBX_MOUNTS set) the directory does not exist
 # there, so fall back to the home directory.
+#
+# PLANNOTATOR_* (remote mode, fixed port, no browser) are set by the kit at
+# sandbox creation, so only the per-run session dir is passed here.
+#
+# No --model here: the startup model comes from settings.json or the /model
+# picker (Ctrl+S saves the default), so the choice is not frozen in this script.
 exec_pi() {
   sbx exec -it "$SANDBOX_NAME" \
     env PI_CODING_AGENT_SESSION_DIR="$SESSION_DIR" \
-        PLANNOTATOR_REMOTE=1 \
-        PLANNOTATOR_PORT="$PLANNOTATOR_PORT" \
-        PLANNOTATOR_BROWSER=none \
     sh -c 'cd "$1" 2>/dev/null || cd "$HOME" || cd /; shift; exec "$@"' \
-    sh "$WORKDIR" pi --model opencode/space-bunny-free
+    sh "$WORKDIR" pi
 }
 if [ "$DRY_RUN" = "1" ]; then
-  log "${C_DIM}[dry-run]${C_RST} sbx exec -it $(printf '%q ' "$SANDBOX_NAME") env PI_CODING_AGENT_SESSION_DIR=$SESSION_DIR PLANNOTATOR_REMOTE=1 PLANNOTATOR_PORT=$PLANNOTATOR_PORT PLANNOTATOR_BROWSER=none sh -c $(printf '%q ' 'cd "$1" 2>/dev/null || cd "$HOME" || cd /; shift; exec "$@"') sh $WORKDIR pi --model opencode/space-bunny-free"
+  log "${C_DIM}[dry-run]${C_RST} sbx exec -it $(printf '%q ' "$SANDBOX_NAME") env PI_CODING_AGENT_SESSION_DIR=$SESSION_DIR sh -c $(printf '%q ' 'cd "$1" 2>/dev/null || cd "$HOME" || cd /; shift; exec "$@"') sh $WORKDIR pi"
   exit 0
 fi
 exec_pi

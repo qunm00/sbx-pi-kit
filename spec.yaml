@@ -35,6 +35,14 @@ credentials:
         - CONTEXT7_API_KEY
 
 environment:
+  # Plannotator's review UI is a web server inside the sandbox. The browser
+  # lives on the host, so bind all interfaces, never launch a browser, and keep
+  # one fixed port for pi-sbx to publish. PLANNOTATOR_PORT must match
+  # PLANNOTATOR_PORT in pi-sbx. Values are stored when the sandbox is created.
+  variables:
+    PLANNOTATOR_REMOTE: "1"
+    PLANNOTATOR_PORT: "19432"
+    PLANNOTATOR_BROWSER: "none"
   proxyManaged:
     - CONTEXT7_API_KEY
 

@@ -20,6 +20,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - `PI_SBX_DRY_RUN=1` to print the resolved `sbx` commands instead of running them
 
 ### Changed
+- `pi-sbx` no longer passes `--model opencode/space-bunny-free`: the startup
+  model now comes from `settings.json` (`defaultProvider`/`defaultModel`) or the
+  `/model` picker (`Ctrl+S` saves the default)
+- Plannotator's env (`PLANNOTATOR_REMOTE`, `PLANNOTATOR_PORT`,
+  `PLANNOTATOR_BROWSER`) moved from the `pi-sbx` exec wrapper into the kit's
+  `spec.yaml` (`environment.variables`), so `sbx run` and `sbx exec` get them
+  too. Kit env is stored at sandbox creation: recreate with `--new` to pick up a
+  change
 - pi now starts in the directory `pi-sbx` was launched from instead of the
   workdir the sandbox was created with, so the shared `pi-sbx` sandbox follows
   the project you are in. When that directory is not mounted (`PI_SBX_MOUNTS`
