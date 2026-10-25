@@ -43,6 +43,7 @@ environment:
     PLANNOTATOR_REMOTE: "1"
     PLANNOTATOR_PORT: "19432"
     PLANNOTATOR_BROWSER: "none"
+    BRAINSTORM_PORT: "19433"
   proxyManaged:
     - CONTEXT7_API_KEY
 
@@ -51,3 +52,6 @@ memory: |
   You are running inside a Docker sandbox (microVM).
   The workspace is mounted at its absolute host path.
   Available providers: OpenRouter (free tier) and GitHub Copilot.
+  The visual companion (the superpowers brainstorm server) must start with
+  --host 0.0.0.0 --url-host localhost so the published port 19433 reaches
+  the host browser.
