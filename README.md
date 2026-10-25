@@ -163,3 +163,31 @@ sbx ports pi-sbx --publish 19432:19432
 Only one sandbox can hold host port 19432 at a time; `pi-sbx` warns when
 publishing fails. Once the image patch is built in, the extension survives
 `--new`.
+
+## Visual companion
+
+The superpowers [visual companion](https://github.com/obra/superpowers) shows
+mockups, diagrams, and options in your browser during brainstorming. The
+sandbox has no browser. So `pi-sbx` publishes port 19433, and the kit sets
+`BRAINSTORM_PORT=19433`. The kit memory also tells the agent to bind every
+interface. The companion then opens at <http://localhost:19433>.
+
+> Kit environment and memory are stored when the sandbox is created. Run
+> `pi-sbx --new` after changing them.
+
+The agent starts the companion with these flags so the published port can reach
+it:
+
+```bash
+bash scripts/start-server.sh --project-dir <project> --host 0.0.0.0 --url-host localhost
+```
+
+The URL carries a session key. Use the whole URL the server prints. If the URL
+does not open, check the mapping:
+
+```bash
+sbx ports pi-sbx                                  # expect 127.0.0.1:19433->19433/tcp4
+```
+
+Only one sandbox can hold host port 19433 at a time. A fixed port allows one
+companion session at a time.
