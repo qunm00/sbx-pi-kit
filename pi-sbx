@@ -126,18 +126,19 @@ run() {
   "$@"
 }
 
-# Plannotator's review UI is a local web server inside the sandbox, but the
-# browser lives on the host, so its fixed port must be published. Idempotent:
-# an existing mapping is left alone, and a failure only warns (another sandbox
-# may already hold the host port).
+# Local web servers inside the sandbox (Plannotator's review UI, the
+# superpowers visual companion) are opened from the host browser, so their
+# fixed ports must be published. Idempotent: an existing mapping is left alone,
+# and a failure only warns (another sandbox may already hold the host port).
 #
-# The matching PLANNOTATOR_* env vars come from the kit (spec.yaml,
-# environment.variables), not from this script, so plain `sbx run` gets them
-# too. Keep this port in sync with PLANNOTATOR_PORT in spec.yaml.
+# The matching env vars come from the kit (spec.yaml, environment.variables),
+# not from this script, so plain `sbx run` gets them too. Keep these ports in
+# sync with spec.yaml.
 PLANNOTATOR_PORT=19432
-publish_review_port() {
-  local name="$1" mapping
-  mapping="${PLANNOTATOR_PORT}:${PLANNOTATOR_PORT}"
+COMPANION_PORT=19433
+publish_port() {
+  local name="$1" port="$2" label="$3" mapping
+  mapping="${port}:${port}"
   if [ "$DRY_RUN" = "1" ]; then
     log "${C_DIM}[dry-run]${C_RST} sbx ports $(printf '%q' "$name") --publish ${mapping}"
     return 0
@@ -146,11 +147,11 @@ publish_review_port() {
   # the pipeline even on a match.
   local existing="$(sbx ports "$name" 2>/dev/null || true)"
   case "$existing" in
-    *"->${PLANNOTATOR_PORT}/"*) return 0;;
+    *"->${port}/"*) return 0;;
   esac
   if ! sbx ports "$name" --publish "$mapping" >/dev/null 2>&1; then
-    log "${C_YELLOW}warning:${C_RST} could not publish port ${PLANNOTATOR_PORT}; Plannotator reviews will not open in the host browser"
-    log "         check 'sbx ports ${name}' and any process already using ${PLANNOTATOR_PORT}"
+    log "${C_YELLOW}warning:${C_RST} could not publish port ${port}; ${label} will not open in the host browser"
+    log "         check 'sbx ports ${name}' and any process already using ${port}"
   fi
 }
 
@@ -219,6 +220,7 @@ else
 fi
 log "${C_CYAN}│${C_RST} sandbox   : ${SANDBOX_NAME}"
 log "${C_CYAN}│${C_RST} review    : http://localhost:${PLANNOTATOR_PORT} (Plannotator)"
+log "${C_CYAN}│${C_RST} companion : http://localhost:${COMPANION_PORT} (visual companion)"
 log "${C_BOLD}${C_CYAN}╰────────────────────────────────────────────────╯${C_RST}"
 
 if $FORCE_NEW; then
@@ -264,7 +266,8 @@ if ! $EXISTS; then
   mounts_str > "$MOUNTS_FILE"
 fi
 
-publish_review_port "$SANDBOX_NAME"
+publish_port "$SANDBOX_NAME" "$PLANNOTATOR_PORT" "Plannotator reviews"
+publish_port "$SANDBOX_NAME" "$COMPANION_PORT" "the visual companion"
 
 sleep 2
 # Redirect session storage to the persistent mount so sessions survive sandbox
